@@ -1,0 +1,34 @@
+name: Create Flutter Project
+
+on:
+  workflow_dispatch: # قابلیت اجرای دستی
+  push:
+    branches: [main, master]
+
+jobs:
+  create_project:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@v2
+        with:
+          flutter-version: '3.x' # یا نسخه دلخواه
+
+      - name: Create Flutter project
+        run: flutter create my_app
+
+      - name: Copy generated files to root
+        run: |
+          rsync -av my_app/ ./
+          rm -rf my_app
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name 'github-actions'
+          git config --global user.email 'github-actions@github.com'
+          git add .
+          git diff --quiet && git diff --staged --quiet || git commit -m "Add Flutter project structure"
+          git push
