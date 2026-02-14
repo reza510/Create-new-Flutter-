@@ -1,38 +1,27 @@
-name: Create Flutter Project
+name: Flutter CI
 
 on:
-  workflow_dispatch:
   push:
-    branches: [main]
-
-permissions:
-  contents: write
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
 
 jobs:
-  create_project:
+  build:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Setup Flutter
-        uses: subosito/flutter-action@v2
+      - uses: actions/checkout@v3
+      - uses: subosito/flutter-action@v2
         with:
           flutter-version: '3.x'
-
-      - name: Create Flutter project
-        run: flutter create my_app
-
-      - name: Copy generated files to root
-        run: |
-          rsync -av my_app/ ./
-          rm -rf my_app
-
-      - name: Commit and push changes
-        run: |
-          git config --global user.name 'github-actions'
-          git config --global user.email 'github-actions@github.com'
-          git remote set-url origin https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git
-          git add .
-          git diff --quiet && git diff --staged --quiet || git commit -m "Add Flutter project structure"
-          git push
+      - name: Install dependencies
+        run: flutter pub get
+      - name: Run tests
+        run: flutter test
+      - name: Build APK
+        run: flutter build apk
+      - name: Upload APK artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-apk
+          path: build/app/outputs/flutter-apk/app-release.apk
